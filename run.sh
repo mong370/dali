@@ -94,9 +94,9 @@ prepare_prod() {
 }
 
 wait_until_ready() {
-  local port tries
+  local port
   port="$(env_value WEB_PORT "$ENV_FILE")"; port="${port:-8080}"
-  for tries in $(seq 1 60); do
+  for _ in $(seq 1 60); do
     if curl -sf "http://127.0.0.1:$port/api/v1/categories" >/dev/null 2>&1; then return 0; fi
     sleep 2
   done
@@ -119,7 +119,7 @@ cmd_prod() {
 cmd_admin() {
   if prod_running; then
     compose run --rm -T api npm run create-admin:prod
-    echo "Signed in with SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD from $ENV_FILE. Remove the password from that file once you have saved it."
+    echo "Sign in with SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD from $ENV_FILE. Save the password, then remove it from that file."
   else
     prepare_dev
     npm run create-admin -w backend
@@ -142,6 +142,7 @@ cmd_backup() {
   make_folder "$target"
   say "Backing up to $target"
   if prod_running; then
+    # shellcheck disable=SC2016 # expanded inside the container
     compose exec -T mongo sh -c 'mongodump --quiet -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin --db dali --archive --gzip' >"$target/database.archive.gz"
     local files; files="$(env_value FILES_DIR "$ENV_FILE")"; files="${files:-/file/dali}"
   else
@@ -163,6 +164,7 @@ cmd_restore() {
   [ -n "$answer" ] || read -r -p 'Type RESTORE to continue: ' answer
   [ "$answer" = RESTORE ] || die 'Cancelled.'
   if prod_running; then
+    # shellcheck disable=SC2016 # expanded inside the container
     compose exec -T mongo sh -c 'mongorestore --quiet -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin --drop --archive --gzip' <"$source/database.archive.gz"
     local files; files="$(env_value FILES_DIR "$ENV_FILE")"; files="${files:-/file/dali}"
   else
