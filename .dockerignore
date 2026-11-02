@@ -1,0 +1,14 @@
+**/node_modules
+**/dist
+**/.env
+**/.env.*
+!**/.env.example
+backend/uploads
+backend/uploads-test
+**/coverage
+.git
+.github
+docs
+*.md
+run.sh
+Caddyfile

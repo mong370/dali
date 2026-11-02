@@ -1,0 +1,86 @@
+# Production stack. Use ./run.sh prod, which prepares .env and the data folders.
+# Files and the database live in folders on the server, so restarts, rebuilds and
+# `docker compose down -v` never remove them.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: '5'
+
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    logging: *logging
+    # Runs as the server's user, so it can write to the folder below.
+    user: '${FILES_UID:-1000}:${FILES_UID:-1000}'
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME:?Set MONGO_USERNAME in .env}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:?Set MONGO_PASSWORD in .env}
+    # Must stay outside FILES_DIR, which is served publicly. No port is published.
+    volumes:
+      - ${DB_DIR:-/file/dali-db}:/data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    logging: *logging
+    user: '${FILES_UID:-1000}:${FILES_UID:-1000}'
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      MONGO_URI: mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongo:27017/dali?authSource=admin
+      UPLOAD_DIR: /file/dali
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Set JWT_ACCESS_SECRET in .env}
+      CLIENT_ORIGINS: ${CLIENT_URL:-http://localhost:8080}
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:8080}
+      # Must be true behind HTTPS. False is only for trying this over http://localhost.
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      SMTP_URL: ${SMTP_URL:-}
+      MAIL_FROM: ${MAIL_FROM:-Dali <no-reply@localhost>}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
+    volumes:
+      - ${FILES_DIR:-/file/dali}:/file/dali
+
+  web:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    restart: unless-stopped
+    logging: *logging
+    depends_on:
+      - api
+    # Local to the server. Public traffic arrives through the https service.
+    ports:
+      - '127.0.0.1:${WEB_PORT:-8080}:80'
+
+  # Optional, enabled when DOMAIN is set: automatic HTTPS certificates.
+  https:
+    image: caddy:2-alpine
+    profiles: [https]
+    restart: unless-stopped
+    logging: *logging
+    depends_on:
+      - web
+    environment:
+      DOMAIN: ${DOMAIN:-}
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  caddy-data:
+  caddy-config:

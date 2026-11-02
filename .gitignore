@@ -1,0 +1,26 @@
+# Dependencies and builds
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Secrets: only the examples are tracked
+.env
+.env.*
+!.env.example
+
+# Uploaded files and test output
+backend/uploads/
+backend/uploads-test/
+backend/uploads-e2e/
+
+# Backups, in case one is made inside the project
+*.archive.gz
+*.tar.gz
+
+# Logs, editors, operating systems
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

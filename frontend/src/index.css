@@ -1,0 +1,201 @@
+@import 'tailwindcss';
+@import '@fontsource/poppins/400.css';
+@import '@fontsource/poppins/500.css';
+@import '@fontsource/poppins/600.css';
+@import '@fontsource/poppins/700.css';
+@import '@fontsource/noto-sans/700.css';
+
+@theme {
+  --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+  --font-heading: 'Noto Sans', 'Poppins', sans-serif;
+
+  --color-brand: #e7005e;
+  --color-brand-dark: #bd004d;
+  --color-brand-soft: #fcf0f6;
+  --color-brand-line: #fbe3ee;
+  --color-hero: #ff63ab;
+  --color-sun: #ffde59;
+  --color-plum: #8e0f5c;
+  --color-navy: #10204f;
+  --color-deal: #f28a3c;
+
+  --animate-slide-in-right: slide-in-right 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+
+  @keyframes slide-in-right {
+    from {
+      transform: translateX(100%);
+      opacity: 0.4;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+}
+
+body {
+  @apply bg-white font-sans text-neutral-800 antialiased;
+}
+
+/* Keyboard focus must stay visible everywhere. */
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+button:not(:disabled),
+[role='button'] {
+  cursor: pointer;
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+@utility input {
+  @apply w-full rounded-lg border border-neutral-300 bg-white px-3 py-2.5 text-base outline-none sm:text-sm transition focus:border-brand focus:ring-2 focus:ring-brand/20;
+}
+@utility label {
+  @apply mb-1 block text-sm font-medium text-neutral-700;
+}
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50;
+}
+@utility btn-primary {
+  @apply btn bg-brand text-white hover:bg-brand-dark;
+}
+@utility btn-outline {
+  @apply btn border border-neutral-300 bg-white text-neutral-800 hover:border-brand hover:text-brand;
+}
+@utility btn-danger {
+  @apply btn border border-red-200 bg-white text-red-600 hover:bg-red-50;
+}
+@utility card {
+  @apply rounded-xl border border-neutral-200 bg-white;
+}
+@utility container-page {
+  @apply mx-auto w-full max-w-[1180px] px-3 sm:px-4;
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Basket search animation, used when a search finds nothing. */
+.basket-lens {
+  animation: basket-lens 3.6s ease-in-out infinite;
+}
+.basket-wiggle {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: basket-wiggle 3.6s ease-in-out infinite;
+}
+.basket-shadow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: basket-shadow 3.6s ease-in-out infinite;
+}
+.basket-question {
+  animation: basket-question 3.6s ease-out infinite;
+}
+.basket-question-late {
+  animation-delay: 1.8s;
+}
+
+@keyframes basket-lens {
+  0%,
+  100% {
+    transform: translate(-40px, -8px) rotate(-6deg);
+  }
+  25% {
+    transform: translate(-20px, 26px) rotate(4deg);
+  }
+  50% {
+    transform: translate(38px, -10px) rotate(8deg);
+  }
+  75% {
+    transform: translate(18px, 26px) rotate(-4deg);
+  }
+}
+@keyframes basket-wiggle {
+  0%,
+  50%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-2.5deg);
+  }
+  75% {
+    transform: rotate(2.5deg);
+  }
+}
+@keyframes basket-shadow {
+  0%,
+  50%,
+  100% {
+    transform: scaleX(1);
+  }
+  25%,
+  75% {
+    transform: scaleX(0.92);
+  }
+}
+@keyframes basket-question {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  30% {
+    opacity: 1;
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+}
+
+/* Admin tables become a stack of labelled cards on phones. Cells name themselves with data-label. */
+@media (max-width: 767px) {
+  .responsive-table thead {
+    display: none;
+  }
+  .responsive-table,
+  .responsive-table tbody {
+    display: block;
+    width: 100%;
+  }
+  .responsive-table tr {
+    display: block;
+    padding: 0.75rem;
+  }
+  .responsive-table td {
+    display: block;
+    padding: 0.25rem 0;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+  .responsive-table td[data-label] {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    text-align: right;
+  }
+  .responsive-table td[data-label]::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    color: var(--color-neutral-600);
+  }
+  .responsive-table td:empty {
+    display: none;
+  }
+}
