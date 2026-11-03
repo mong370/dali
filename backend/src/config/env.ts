@@ -17,6 +17,9 @@ const schema = z.object({
   BCRYPT_ROUNDS: z.coerce.number().int().min(4).max(15).default(12),
   // Outside the app and any container, so uploaded files survive redeploys.
   UPLOAD_DIR: z.string().default('/file/dali'),
+  CLOUDINARY_CLOUD_NAME: z.string().optional(),
+  CLOUDINARY_API_KEY: z.string().optional(),
+  CLOUDINARY_API_SECRET: z.string().optional(),
   LOG_LEVEL: z.string().default('info'),
   // e.g. smtps://user:password@smtp.example.com:465
   SMTP_URL: z.string().optional(),

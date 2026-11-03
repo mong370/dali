@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import { mkdir, open, rename, unlink } from 'node:fs/promises';
+import { mkdir, open, unlink } from 'node:fs/promises';
 import path from 'node:path';
+import { v2 as cloudinary } from 'cloudinary';
 import { Router } from 'express';
 import multer from 'multer';
 import { z } from 'zod';
@@ -77,7 +78,6 @@ export const uploadRouter = Router();
 uploadRouter.post('/', requireAdmin, upload.single('file'), async (req, res) => {
   if (!req.file) throw ApiError.badRequest('Choose a file to upload');
   const temp = req.file.path;
-  let moved = false;
   try {
     const detected = detectFile(await readHead(temp), req.file.originalname);
     if (!detected) {
@@ -87,21 +87,34 @@ uploadRouter.post('/', requireAdmin, upload.single('file'), async (req, res) => 
       throw ApiError.badRequest(`That file is too large. The limit is ${detected.maxBytes / MB} MB`, 'FILE_TOO_LARGE');
     }
 
-    // e.g. images/products/2026/11/<id>.jpg
     const now = new Date();
-    const relative = path.posix.join(
-      detected.kind,
-      folderField.parse(req.body?.folder),
-      String(now.getFullYear()),
-      String(now.getMonth() + 1).padStart(2, '0'),
-      `${randomUUID()}.${detected.extension}`,
-    );
-    const destination = path.join(path.resolve(env.UPLOAD_DIR), relative);
-    await mkdir(path.dirname(destination), { recursive: true });
-    await rename(temp, destination);
-    moved = true;
-    res.status(201).json({ url: `/uploads/${relative}`, kind: detected.kind });
+    const folderName = folderField.parse(req.body?.folder);
+    if (!env.CLOUDINARY_CLOUD_NAME || !env.CLOUDINARY_API_KEY || !env.CLOUDINARY_API_SECRET) {
+      throw new ApiError(500, 'Cloudinary is not configured', 'CLOUDINARY_NOT_CONFIGURED');
+    }
+
+    cloudinary.config({
+      cloud_name: env.CLOUDINARY_CLOUD_NAME,
+      api_key: env.CLOUDINARY_API_KEY,
+      api_secret: env.CLOUDINARY_API_SECRET,
+      secure: true,
+    });
+    const result = await cloudinary.uploader.upload(temp, {
+      folder: [
+        'dali',
+        detected.kind,
+        folderName,
+        String(now.getFullYear()),
+        String(now.getMonth() + 1).padStart(2, '0'),
+      ].join('/'),
+      public_id: randomUUID(),
+      resource_type: 'auto',
+      format: detected.extension,
+      overwrite: false,
+      unique_filename: false,
+    });
+    res.status(201).json({ url: result.secure_url, kind: detected.kind });
   } finally {
-    if (!moved) await unlink(temp).catch(() => undefined);
+    await unlink(temp).catch(() => undefined);
   }
 });
