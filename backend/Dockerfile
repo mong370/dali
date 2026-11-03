@@ -1,5 +1,5 @@
 # Build from the repository root: docker build -f backend/Dockerfile .
-FROM node:24-alpine AS build
+FROM node:26-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY backend/package.json backend/
@@ -8,7 +8,7 @@ RUN npm ci -w backend --include-workspace-root=false
 COPY backend backend
 RUN npm run build -w backend
 
-FROM node:24-alpine
+FROM node:26-alpine
 ENV NODE_ENV=production
 WORKDIR /app
 COPY package.json package-lock.json ./
